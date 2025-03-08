@@ -320,6 +320,36 @@
       "top": -9.6,
       "left": 873.6,
       "attrs": { "text": "LATCH - 9\nCLOCK - 12\nDATA - 10\n\n" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led17",
+      "top": -186,
+      "left": -101.8,
+      "attrs": { "color": "blue" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led18",
+      "top": -186,
+      "left": -44.2,
+      "attrs": { "color": "limegreen" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r17",
+      "top": -100.8,
+      "left": -115.75,
+      "rotate": 90,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r18",
+      "top": -100.8,
+      "left": -58.15,
+      "rotate": 90,
+      "attrs": { "value": "220" }
     }
   ],
   "connections": [
@@ -361,8 +391,6 @@
     [ "sw5:3", "uno:2", "gold", [ "v38.4", "h-28.6" ] ],
     [ "sw4:3", "uno:3", "gold", [ "h0.2", "v76.8", "h6.2" ] ],
     [ "sw1:3", "uno:4", "gold", [ "v38.4", "h38.6", "v38.4", "h6.3" ] ],
-    [ "sw3:3", "uno:5", "gold", [ "v28.8", "h77", "v57.6", "h9.6" ] ],
-    [ "sw2:3", "uno:6", "gold", [ "v76.8", "h115.4", "v9.6", "h9.6" ] ],
     [ "sr2:MR", "sr2:VCC", "red", [ "v-18", "h-57.6" ] ],
     [ "sr2:OE", "sr2:GND", "black", [ "v-27.6", "h57.6", "v67.2", "h-19.2" ] ],
     [ "sr2:Q0", "r16:1", "green", [ "v-37.2", "h-48", "v192", "h19.2" ] ],
@@ -394,7 +422,15 @@
     [ "uno:10", "sr2:DS", "green", [ "v-47.4", "h604.9" ] ],
     [ "sr1:MR", "sr2:VCC", "red", [ "v-18", "h297.6" ] ],
     [ "sr1:GND", "sr2:GND", "black", [ "v9.6", "h355.2" ] ],
-    [ "led16:C", "led7:C", "black", [ "v-9.6", "h-86.8" ] ]
+    [ "led16:C", "led7:C", "black", [ "v-9.6", "h-86.8" ] ],
+    [ "led17:C", "r17:1", "black", [ "v0" ] ],
+    [ "led18:C", "r18:1", "black", [ "v0" ] ],
+    [ "r17:2", "uno:GND.1", "black", [ "h0", "v46.8", "h201.6" ] ],
+    [ "r18:2", "r17:2", "black", [ "h0", "v18", "h-57.6" ] ],
+    [ "led18:A", "uno:5", "limegreen", [ "v105.6", "h220.8" ] ],
+    [ "led17:A", "uno:6", "blue", [ "v105.6", "h278.4" ] ],
+    [ "sw3:3", "uno:7", "gold", [ "v48", "h67.4" ] ],
+    [ "sw2:3", "uno:8", "gold", [ "v76.8", "h96.2" ] ]
   ],
   "dependencies": {}
 }
