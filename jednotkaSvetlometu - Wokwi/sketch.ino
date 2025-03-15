@@ -1,62 +1,71 @@
 /*
 
-Řídící jednotka svetlometu - firmware
-- stále ve vývoji
-- funkční animace směrovek, není možné je spustit přepínačemi
-- nefunkční přepínače, obrysová a dálková světla
+  Řídící jednotka svetlometu - firmware
+  - stále ve vývoji
+  - funkční animace směrovek, není možné je spustit přepínačemi
+  - nefunkční přepínače, obrysová a dálková světla
 
-https://github.com/ondrejbrousil/jednotkaSvetlometu$0
+  https://github.com/ondrejbrousil/jednotkaSvetlometu$0
 
 */
 
-//Tlacitka a spinace
+int promMillis = 0;
+
+//Tlacitka a spinace - fyzicke piny na desce
 int pinObrys = 8;
 int pinDalkove = 7;
 int pinLeve = 4;
 int pinPrave = 3;
 int pinVystrazne = 2;
 
-int stavObrys = 0;
-int stavDalkove = 0;
-int stavLeve = 0;
-int stavPrave = 0;
-int stavVystrazne = 0;
+//Cteni pinu promitnuti na promennou
+bool stavObrys = 0;
+bool stavDalkove = 0;
+bool stavLeve = 0;
+bool stavPrave = 0;
+bool stavVystrazne = 0;
 
 //Obrys
-int obrysDimm = 0;
-int obrysDimmKrok = 20;
-int obrysDimmKrokProdleva = 100;
-int vystupObrys = 5;
+int obrysDimm = 0; //0-255 stmivani LED
+int obrysDimmProdleva = 100; //prodleva zvyseni/snizeni jasu
+int vystupObrys = 5; //fyzicky vystupni pin
 
 //Dalkove
-int dalkoveDimm = 0;
-int dalkoveDimmKrok = 20;
-int dalkoveDimmKrokProdleva = 100;
-int vystupDalkove = 6;
+int dalkoveDimm = 0; //0-255 stmivani LED
+int dalkoveDimmProdleva = 100; //prodleva zvyseni/snizeni jasu
+int vystupDalkove = 6; //fyzicky vystupni pin
 
 
-//Smerorvky
+//Smerorvky - zapojeni registru
 int clock = 12;
 int latchLeve = 11;
 int dataLeve = 13;
 int latchPrave = 9;
 int dataPrave = 10;
 
-int smerovkyLeve = 0;
-int smerovkyPrave = 0;
-int smerovkyProdleva = 70;
+int predchoziSmerovkyLeve = 0;
+int predchoziSmerovkyPrave = 0;
+int smerovkyLeve = 0; //cislo aktualniho snimku animace
+int smerovkyPrave = 0; //cislo aktualniho snimku animace
+int smerovkyProdleva = 70; //prodleva zvyseni cisla snimku animace
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(9600);
+
   pinMode(clock, OUTPUT);
   pinMode(latchLeve, OUTPUT);
   pinMode(dataLeve, OUTPUT);
   pinMode(latchPrave, OUTPUT);
   pinMode(dataPrave, OUTPUT);
+
+  pinMode(pinObrys, INPUT);
+  pinMode(pinDalkove, INPUT);
+  pinMode(pinLeve, INPUT);
+  pinMode(pinPrave, INPUT);
+  pinMode(pinVystrazne, INPUT);
 }
 
-void smerovkyLeveVoid() {
+void smerovkyLeveVoid() { //Pocitadlo snimku animace
   for (smerovkyLeve; smerovkyLeve <= 8; smerovkyLeve++) {
     smerovkyLeveZobrazeni();
     delay(smerovkyProdleva);
@@ -67,7 +76,7 @@ void smerovkyLeveVoid() {
   }
 }
 
-void smerovkyLeveZobrazeni() {
+void smerovkyLeveZobrazeni() { //Zobrazeni aktualniho snimku dle pocitadla
   switch (smerovkyLeve) {
     case 0:
       digitalWrite(latchLeve, LOW);
@@ -117,7 +126,13 @@ void smerovkyLeveZobrazeni() {
   }
 }
 
-void smerovkyPraveVoid() {
+void smerovkyLeveShiftOut() { //Vymazani shift registru
+  digitalWrite(latchLeve, LOW);
+  shiftOut(dataLeve, clock, MSBFIRST, 0);
+  digitalWrite(latchLeve, HIGH);
+}
+
+void smerovkyPraveVoid() { //Pocitadlo snimku animace
   for (smerovkyPrave; smerovkyPrave <= 8; smerovkyPrave++) {
     smerovkyPraveZobrazeni();
     delay(smerovkyProdleva);
@@ -128,7 +143,7 @@ void smerovkyPraveVoid() {
   }
 }
 
-void smerovkyPraveZobrazeni() {
+void smerovkyPraveZobrazeni() { //Zobrazeni aktualniho snimku dle pocitadla
   switch (smerovkyPrave) {
     case 0:
       digitalWrite(latchPrave, LOW);
@@ -179,32 +194,36 @@ void smerovkyPraveZobrazeni() {
 
 }
 
-/* 
-
-P O Z N A M K A : aktualne ve stadiu vyvoje
-
-void obrysVoid() {
-
-  int obrysPricteni = obrysDimm+obrysDimmKrok;
-  Serial.print("vysledek: ");
-  Serial.println(obrysPricteni);
-
-  for (obrysDimm; obrysDimm <= 255; obrysDimm+obrysDimmKrok) {
-    digitalWrite(vystupObrys, obrysDimm);
-    delay(obrysDimmKrokProdleva);
-    Serial.println(obrysDimm);
-  }
+void smerovkyPraveShiftOut() { //Vymazani shift registru
+  digitalWrite(latchPrave, LOW);
+  shiftOut(dataPrave, clock, MSBFIRST, 0);
+  digitalWrite(latchPrave, HIGH);
 }
 
-void cteniVstupu() {
-  stavObrys = digitalRead(pinObrys);
+void smerovkyRizeni() {
+  if (stavLeve && promMillis - lastBlinkTimeLeve >= smerovkyProdleva) {
+    lastBlinkTimeLeve = promMillis;
+    smerovkyLeveZobrazeni();
+    smerovkyLeve++;
+    if (smerovkyLeve > 8) smerovkyLeve = 0;
+  } 
+  else if (!stavLeve) {
+    smerovkyLeveShiftOut();
+  }
 
-  if(stavObrys) {
-    
+  if (stavPrave && promMillis - lastBlinkTimePrave >= smerovkyProdleva) {
+    lastBlinkTimePrave = promMillis;
+    smerovkyPraveZobrazeni();
+    smerovkyPrave++;
+    if (smerovkyPrave > 8) smerovkyPrave = 0;
+  } 
+  else if (!stavPrave) {
+    smerovkyPraveShiftOut();
   }
 }
-*/
 
 void loop() {
-  smerovkyPraveVoid();
+  promMillis = millis();
+
+
 }
